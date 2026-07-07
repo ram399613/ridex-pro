@@ -40,9 +40,15 @@ app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'RideX AP
 // ---- Serve React build (single-service deployment on Render) ----
 const buildPath = path.join(__dirname, '..', 'frontend', 'build');
 if (fs.existsSync(buildPath)) {
-  app.use(express.static(buildPath));
-  // SPA fallback — anything that isn't /api/* returns index.html so react-router works on refresh.
-  app.get(/^\/(?!api).*/, (req, res) => res.sendFile(path.join(buildPath, 'index.html')));
+  // Serve hashed static assets with proper Content-Type from /static/*
+  app.use(express.static(buildPath, { index: false, maxAge: '1y' }));
+  // SPA fallback — only for GETs that DON'T start with /api and DON'T look like a static asset.
+  app.use((req, res, next) => {
+    if (req.method !== 'GET') return next();
+    if (req.path.startsWith('/api')) return next();
+    if (req.path.includes('.')) return next(); // css/js/png/ico/etc. — let express.static handle or 404
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
   console.log(`📂 Serving frontend build from: ${buildPath}`);
 } else {
   app.get('/', (req, res) => res.json({ status: 'OK', message: 'RideX API is running 🚀 (no frontend build found)' }));
