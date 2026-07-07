@@ -14,7 +14,7 @@ export const SocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    // Same-origin when SOCKET_URL is empty (single-service deployment).
+
     const s = SOCKET_URL
       ? io(SOCKET_URL, { transports: ['polling', 'websocket'], path: '/api/socket.io/', reconnection: true })
       : io({ transports: ['polling', 'websocket'], path: '/api/socket.io/', reconnection: true });
@@ -40,7 +40,7 @@ export const SocketProvider = ({ children }) => {
     s.on('admin:contact:new', (m) => window.dispatchEvent(new CustomEvent('ridex:admin-contact', { detail: m })));
 
     return () => { s.disconnect(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   useEffect(() => {

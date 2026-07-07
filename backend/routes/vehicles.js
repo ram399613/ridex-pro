@@ -5,7 +5,6 @@ const { protect } = require('../middleware/auth');
 const { adminOnly } = require('../middleware/admin');
 const { emitVehicleCreated, emitVehicleUpdated, emitVehicleDeleted } = require('../socket');
 
-// GET /api/vehicles
 router.get('/', async (req, res) => {
   try {
     const { type, brand, minPrice, maxPrice, search, sort, available } = req.query;
@@ -32,8 +31,7 @@ router.get('/', async (req, res) => {
     else sortObj.createdAt = -1;
 
     const vehicles = await Vehicle.find(query).sort(sortObj);
-    // Public list — cheap to serve, safe to cache for 30 s at the browser
-    // and 5 min at Render's edge. Realtime updates come via Socket.IO.
+
     res.set('Cache-Control', 'public, max-age=30, s-maxage=300, stale-while-revalidate=60');
     res.json(vehicles);
   } catch (err) {
@@ -41,7 +39,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/vehicles/:id
 router.get('/:id', async (req, res) => {
   try {
     const vehicle = await Vehicle.findById(req.params.id);
@@ -53,7 +50,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/vehicles (admin)
 router.post('/', protect, adminOnly, async (req, res) => {
   try {
     const vehicle = await Vehicle.create(req.body);
@@ -64,7 +60,6 @@ router.post('/', protect, adminOnly, async (req, res) => {
   }
 });
 
-// PUT /api/vehicles/:id (admin)
 router.put('/:id', protect, adminOnly, async (req, res) => {
   try {
     const vehicle = await Vehicle.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
@@ -76,7 +71,6 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
   }
 });
 
-// DELETE /api/vehicles/:id (admin)
 router.delete('/:id', protect, adminOnly, async (req, res) => {
   try {
     const vehicle = await Vehicle.findByIdAndDelete(req.params.id);

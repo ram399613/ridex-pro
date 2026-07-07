@@ -5,7 +5,6 @@ const Vehicle = require('../models/Vehicle');
 const { protect } = require('../middleware/auth');
 const { emitVehicleUpdated, emitAdminBookingNew, emitAdminBookingUpdated } = require('../socket');
 
-// GET /api/bookings - User's bookings
 router.get('/', protect, async (req, res) => {
   try {
     const bookings = await Booking.find({ user: req.user._id })
@@ -17,7 +16,6 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
-// GET /api/bookings/:id
 router.get('/:id', protect, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
@@ -32,7 +30,6 @@ router.get('/:id', protect, async (req, res) => {
   }
 });
 
-// POST /api/bookings - Create booking
 router.post('/', protect, async (req, res) => {
   try {
     const { vehicleId, pickupLocation, dropLocation, pickupDate, returnDate, couponCode, notes } = req.body;
@@ -71,8 +68,6 @@ router.post('/', protect, async (req, res) => {
 
     await booking.populate('vehicle', 'name brand type pricePerDay images color');
 
-    // Reserve the vehicle so nobody else can double-book it, and tell
-    // every connected browser instantly (vehicles list / details page).
     vehicle.available = false;
     await vehicle.save();
     emitVehicleUpdated(vehicle);
@@ -84,7 +79,6 @@ router.post('/', protect, async (req, res) => {
   }
 });
 
-// PUT /api/bookings/:id/cancel
 router.put('/:id/cancel', protect, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
@@ -98,7 +92,6 @@ router.put('/:id/cancel', protect, async (req, res) => {
     if (booking.paymentStatus === 'paid') booking.paymentStatus = 'refunded';
     await booking.save();
 
-    // Free up the vehicle again and let everyone browsing know in real time.
     const vehicle = await Vehicle.findById(booking.vehicle);
     if (vehicle && !vehicle.available) {
       vehicle.available = true;

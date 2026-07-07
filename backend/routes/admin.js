@@ -9,7 +9,6 @@ const { emitVehicleUpdated, emitAdminBookingUpdated, emitUserNotification } = re
 
 router.use(protect, adminOnly);
 
-// GET /api/admin/stats
 router.get('/stats', async (req, res) => {
   try {
     const totalUsers = await User.countDocuments({ role: 'user' });
@@ -50,7 +49,6 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// GET /api/admin/users
 router.get('/users', async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
@@ -60,7 +58,6 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// DELETE /api/admin/users/:id
 router.delete('/users/:id', async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
@@ -70,7 +67,6 @@ router.delete('/users/:id', async (req, res) => {
   }
 });
 
-// GET /api/admin/bookings
 router.get('/bookings', async (req, res) => {
   try {
     const bookings = await Booking.find()
@@ -83,7 +79,6 @@ router.get('/bookings', async (req, res) => {
   }
 });
 
-// PUT /api/admin/bookings/:id
 router.put('/bookings/:id', async (req, res) => {
   try {
     const previous = await Booking.findById(req.params.id);
@@ -95,7 +90,6 @@ router.put('/bookings/:id', async (req, res) => {
       .populate('user', 'name email phone');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    // If the booking just became cancelled/completed, free up the vehicle again.
     if (statusChanged && ['cancelled', 'completed'].includes(booking.status)) {
       const vehicle = await Vehicle.findById(booking.vehicle._id);
       if (vehicle && !vehicle.available) {
@@ -120,7 +114,6 @@ router.put('/bookings/:id', async (req, res) => {
   }
 });
 
-// GET /api/admin/vehicles
 router.get('/vehicles', async (req, res) => {
   try {
     const vehicles = await Vehicle.find().sort({ createdAt: -1 });

@@ -1,7 +1,3 @@
-// Vehicle image URLs (Unsplash CDN — fast, cached, ~40 KB each).
-// Keyed by exact vehicle name so we can auto-migrate legacy Wikimedia URLs
-// on boot without wiping user data.
-
 const IMG = (id) => `https://images.unsplash.com/${id}?w=800&q=75&auto=format&fit=crop`;
 
 const vehicleImages = {
@@ -23,7 +19,6 @@ const vehicleImages = {
   'Mahindra Thar':              IMG('photo-1533473359331-0135ef1b58bf'),
 };
 
-// Fallback images by vehicle type (used if vehicle name isn't in the map above)
 const fallbackByType = {
   bike:    IMG('photo-1558981806-ec527fa84c39'),
   scooter: IMG('photo-1571068316344-75bc76f77890'),

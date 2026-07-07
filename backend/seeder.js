@@ -122,12 +122,10 @@ const vehicles = [
 
 const seedDB = async () => {
   await connectDB();
-  await seedIfEmpty(true); // force clear + seed when run directly
+  await seedIfEmpty(true);
   process.exit(0);
 };
 
-// Reusable seed function — used on-boot from server.js.
-// Runs only if the DB is empty (unless force=true).
 const seedIfEmpty = async (force = false) => {
   try {
     const existingUsers = await User.countDocuments();
@@ -155,7 +153,6 @@ const seedIfEmpty = async (force = false) => {
     console.log(`👤 Created admin: ${admin.email}`);
     console.log(`👤 Created user:  ${user.email}`);
 
-    // Apply fast Unsplash CDN images at insertion time.
     const vehiclesWithFastImages = vehicles.map(v => ({ ...v, images: [imageFor(v)] }));
     const createdVehicles = await Vehicle.insertMany(vehiclesWithFastImages);
     console.log(`🚗 Created ${createdVehicles.length} vehicles`);
@@ -180,9 +177,6 @@ const seedIfEmpty = async (force = false) => {
   }
 };
 
-// One-off migration: replace slow Wikimedia URLs (and any other legacy image
-// URLs) with fast Unsplash CDN URLs. Runs on every boot and only touches
-// vehicles whose images actually need updating.
 const migrateImages = async () => {
   try {
     const legacyRe = /(wikimedia|Special:FilePath)/i;

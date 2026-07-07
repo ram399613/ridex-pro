@@ -7,7 +7,6 @@ const { protect } = require('../middleware/auth');
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET || 'ridex_super_secret_jwt_key_2024', { expiresIn: '7d' });
 
-// POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -24,7 +23,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -41,10 +39,8 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET /api/auth/me
 router.get('/me', protect, async (req, res) => res.json(req.user));
 
-// PUT /api/auth/profile
 router.put('/profile', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);

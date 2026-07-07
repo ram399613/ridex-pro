@@ -4,7 +4,6 @@ const Booking = require('../models/Booking');
 const { protect } = require('../middleware/auth');
 const { emitAdminBookingUpdated, emitUserNotification } = require('../socket');
 
-// POST /api/payments/initiate
 router.post('/initiate', protect, async (req, res) => {
   try {
     const { bookingId, paymentMethod } = req.body;
@@ -28,14 +27,12 @@ router.post('/initiate', protect, async (req, res) => {
   }
 });
 
-// POST /api/payments/verify
 router.post('/verify', protect, async (req, res) => {
   try {
     const { bookingId, transactionId, paymentMethod } = req.body;
     const booking = await Booking.findById(bookingId);
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    // Mock payment always succeeds
     booking.paymentStatus = 'paid';
     booking.status = 'confirmed';
     booking.paymentMethod = paymentMethod;
