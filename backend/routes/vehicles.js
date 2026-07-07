@@ -32,6 +32,9 @@ router.get('/', async (req, res) => {
     else sortObj.createdAt = -1;
 
     const vehicles = await Vehicle.find(query).sort(sortObj);
+    // Public list — cheap to serve, safe to cache for 30 s at the browser
+    // and 5 min at Render's edge. Realtime updates come via Socket.IO.
+    res.set('Cache-Control', 'public, max-age=30, s-maxage=300, stale-while-revalidate=60');
     res.json(vehicles);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -43,6 +46,7 @@ router.get('/:id', async (req, res) => {
   try {
     const vehicle = await Vehicle.findById(req.params.id);
     if (!vehicle) return res.status(404).json({ message: 'Vehicle not found' });
+    res.set('Cache-Control', 'public, max-age=30, s-maxage=300, stale-while-revalidate=60');
     res.json(vehicle);
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -24,6 +25,7 @@ initSocket(server);
 // Middleware
 const corsOrigin = process.env.CORS_ORIGIN;
 app.use(cors({ origin: corsOrigin ? [corsOrigin] : '*', credentials: true }));
+app.use(compression()); // gzip everything (JSON, HTML, JS, CSS)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
