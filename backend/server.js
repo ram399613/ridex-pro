@@ -6,15 +6,16 @@ const http = require('http');
 require('dotenv').config();
 const connectDB = require('./config/db');
 const { initSocket } = require('./socket');
-const { seedIfEmpty } = require('./seeder');
+const { seedIfEmpty, migrateImages } = require('./seeder');
 
 const app = express();
 const server = http.createServer(app);
 
-// Connect MongoDB, then auto-seed if empty.
+// Connect MongoDB, then auto-seed if empty and run one-off migrations.
 (async () => {
   await connectDB();
   try { await seedIfEmpty(false); } catch (e) { console.error('Seed check failed:', e.message); }
+  try { await migrateImages(); } catch (e) { console.error('Image migration failed:', e.message); }
 })();
 
 // Real-time layer (Socket.IO)

@@ -3,6 +3,7 @@ const connectDB = require('./config/db');
 const User = require('./models/User');
 const Vehicle = require('./models/Vehicle');
 const Booking = require('./models/Booking');
+const { imageFor } = require('./vehicleImages');
 
 const vehicles = [
   {
@@ -154,7 +155,9 @@ const seedIfEmpty = async (force = false) => {
     console.log(`👤 Created admin: ${admin.email}`);
     console.log(`👤 Created user:  ${user.email}`);
 
-    const createdVehicles = await Vehicle.insertMany(vehicles);
+    // Apply fast Unsplash CDN images at insertion time.
+    const vehiclesWithFastImages = vehicles.map(v => ({ ...v, images: [imageFor(v)] }));
+    const createdVehicles = await Vehicle.insertMany(vehiclesWithFastImages);
     console.log(`🚗 Created ${createdVehicles.length} vehicles`);
 
     const bookings = [
@@ -177,6 +180,29 @@ const seedIfEmpty = async (force = false) => {
   }
 };
 
-module.exports = { seedIfEmpty };
+// One-off migration: replace slow Wikimedia URLs (and any other legacy image
+// URLs) with fast Unsplash CDN URLs. Runs on every boot and only touches
+// vehicles whose images actually need updating.
+const migrateImages = async () => {
+  try {
+    const legacyRe = /(wikimedia|Special:FilePath)/i;
+    const all = await Vehicle.find({});
+    let touched = 0;
+    for (const v of all) {
+      const current = v.images?.[0] || '';
+      const desired = imageFor(v);
+      if (!current || legacyRe.test(current) || current !== desired) {
+        v.images = [desired];
+        await v.save();
+        touched += 1;
+      }
+    }
+    if (touched > 0) console.log(`🖼️  Migrated ${touched} vehicle image(s) to Unsplash CDN`);
+  } catch (err) {
+    console.error('Image migration failed:', err.message);
+  }
+};
+
+module.exports = { seedIfEmpty, migrateImages };
 
 if (require.main === module) seedDB();
