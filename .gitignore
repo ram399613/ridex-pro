@@ -29,3 +29,9 @@ Thumbs.db
 # Caches
 .cache/
 **/.cache/
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
