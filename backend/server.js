@@ -17,7 +17,8 @@ connectDB();
 initSocket(server);
 
 // Middleware
-app.use(cors());
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(cors({ origin: corsOrigin ? [corsOrigin] : '*', credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

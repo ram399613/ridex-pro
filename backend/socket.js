@@ -12,8 +12,9 @@ let io = null;
  *  - "user:<userId>" -> a specific logged-in user (personal booking notifications)
  */
 function initSocket(server) {
+  const corsOrigin = process.env.CORS_ORIGIN;
   io = new Server(server, {
-    cors: { origin: '*' },
+    cors: { origin: corsOrigin || '*', credentials: true },
     path: '/api/socket.io/',
   });
 

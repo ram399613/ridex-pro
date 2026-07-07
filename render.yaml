@@ -1,0 +1,47 @@
+# Render Blueprint - deploys backend + frontend together in one click.
+# 1. Push repo to GitHub
+# 2. Render dashboard -> New + -> Blueprint -> pick your repo
+# 3. Set MONGO_URI (MongoDB Atlas connection string) when prompted
+# Both services get created and linked automatically.
+
+services:
+  # ============ BACKEND (Node/Express + Socket.IO) ============
+  - type: web
+    name: ridex-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true          # Render auto-generates a strong secret
+      - key: MONGO_URI
+        sync: false                  # User must paste MongoDB Atlas URI in dashboard
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: ridex-frontend
+          property: host             # e.g. https://ridex-frontend.onrender.com
+
+  # ============ FRONTEND (React static site) ============
+  - type: web
+    name: ridex-frontend
+    runtime: static
+    rootDir: frontend
+    plan: free
+    buildCommand: yarn install && yarn build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_BACKEND_URL
+        fromService:
+          type: web
+          name: ridex-backend
+          property: host             # e.g. https://ridex-backend.onrender.com
+    routes:
+      - type: rewrite                # SPA fallback so react-router works on refresh
+        source: /*
+        destination: /index.html
