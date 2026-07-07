@@ -1,18 +1,23 @@
-# Render Blueprint - deploys backend + frontend together in one click.
-# 1. Push repo to GitHub
-# 2. Render dashboard -> New + -> Blueprint -> pick your repo
-# 3. Set MONGO_URI (MongoDB Atlas connection string) when prompted
-# Both services get created and linked automatically.
+# Render Blueprint — deploys RideX as a SINGLE web service.
+# The Node backend also serves the built React frontend, so both live at the
+# same URL (e.g. https://ridex.onrender.com). No Shell access needed —
+# the DB auto-seeds on first boot if it's empty.
+#
+# HOW TO DEPLOY:
+# 1. Push this repo to GitHub.
+# 2. Create a free MongoDB Atlas cluster; whitelist 0.0.0.0/0; copy the URI.
+# 3. Render Dashboard -> New + -> Blueprint -> pick your repo.
+# 4. When prompted, paste MONGO_URI. Everything else is auto-set.
+# 5. Wait 3-5 min; open the service URL. Log in with the seeded credentials.
 
 services:
-  # ============ BACKEND (Node/Express + Socket.IO) ============
   - type: web
-    name: ridex-backend
+    name: ridex
     runtime: node
-    rootDir: backend
     plan: free
-    buildCommand: npm install
-    startCommand: node server.js
+    # Build the React frontend, then install backend deps.
+    buildCommand: cd frontend && yarn install --frozen-lockfile && yarn build && cd ../backend && npm install
+    startCommand: cd backend && node server.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
@@ -21,27 +26,5 @@ services:
         generateValue: true          # Render auto-generates a strong secret
       - key: MONGO_URI
         sync: false                  # User must paste MongoDB Atlas URI in dashboard
-      - key: CORS_ORIGIN
-        fromService:
-          type: web
-          name: ridex-frontend
-          property: host             # e.g. https://ridex-frontend.onrender.com
-
-  # ============ FRONTEND (React static site) ============
-  - type: web
-    name: ridex-frontend
-    runtime: static
-    rootDir: frontend
-    plan: free
-    buildCommand: yarn install && yarn build
-    staticPublishPath: ./build
-    envVars:
-      - key: REACT_APP_BACKEND_URL
-        fromService:
-          type: web
-          name: ridex-backend
-          property: host             # e.g. https://ridex-backend.onrender.com
-    routes:
-      - type: rewrite                # SPA fallback so react-router works on refresh
-        source: /*
-        destination: /index.html
+      # No CORS_ORIGIN needed — frontend and backend share the same origin.
+      # No REACT_APP_BACKEND_URL needed — API calls are relative.

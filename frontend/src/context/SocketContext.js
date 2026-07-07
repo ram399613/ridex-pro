@@ -14,7 +14,10 @@ export const SocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const s = io(SOCKET_URL, { transports: ['polling', 'websocket'], path: '/api/socket.io/', reconnection: true });
+    // Same-origin when SOCKET_URL is empty (single-service deployment).
+    const s = SOCKET_URL
+      ? io(SOCKET_URL, { transports: ['polling', 'websocket'], path: '/api/socket.io/', reconnection: true })
+      : io({ transports: ['polling', 'websocket'], path: '/api/socket.io/', reconnection: true });
     setSocket(s);
 
     s.on('connect', () => {

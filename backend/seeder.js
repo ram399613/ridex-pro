@@ -121,22 +121,36 @@ const vehicles = [
 
 const seedDB = async () => {
   await connectDB();
+  await seedIfEmpty(true); // force clear + seed when run directly
+  process.exit(0);
+};
+
+// Reusable seed function — used on-boot from server.js.
+// Runs only if the DB is empty (unless force=true).
+const seedIfEmpty = async (force = false) => {
   try {
-    await User.deleteMany({});
-    await Vehicle.deleteMany({});
-    await Booking.deleteMany({});
-    console.log('🗑️  Cleared existing data');
+    const existingUsers = await User.countDocuments();
+    const existingVehicles = await Vehicle.countDocuments();
+    if (!force && (existingUsers > 0 || existingVehicles > 0)) {
+      console.log(`ℹ️  Skipping seed (already have ${existingUsers} users, ${existingVehicles} vehicles).`);
+      return;
+    }
+
+    if (force) {
+      await User.deleteMany({});
+      await Vehicle.deleteMany({});
+      await Booking.deleteMany({});
+      console.log('🗑️  Cleared existing data');
+    }
 
     const admin = await User.create({
       name: 'Admin RideX', email: 'admin@ridex.com', password: 'admin123',
       phone: '+91 9876543210', role: 'admin',
     });
-
     const user = await User.create({
       name: 'Ramu Reddy', email: 'ramu@example.com', password: 'test123',
       phone: '+91 9876543210', role: 'user',
     });
-
     console.log(`👤 Created admin: ${admin.email}`);
     console.log(`👤 Created user:  ${user.email}`);
 
@@ -144,32 +158,11 @@ const seedDB = async () => {
     console.log(`🚗 Created ${createdVehicles.length} vehicles`);
 
     const bookings = [
-      {
-        user: user._id, vehicle: createdVehicles[0]._id,
-        pickupLocation: 'Koramangala, Bangalore', dropLocation: 'Koramangala, Bangalore',
-        pickupDate: new Date('2025-05-21'), returnDate: new Date('2025-05-23'),
-        totalDays: 2, totalAmount: 998, status: 'confirmed', paymentStatus: 'paid', paymentMethod: 'upi',
-      },
-      {
-        user: user._id, vehicle: createdVehicles[1]._id,
-        pickupLocation: 'Indiranagar, Bangalore', dropLocation: 'Indiranagar, Bangalore',
-        pickupDate: new Date('2025-05-20'), returnDate: new Date('2025-05-21'),
-        totalDays: 1, totalAmount: 249, status: 'completed', paymentStatus: 'paid', paymentMethod: 'card',
-      },
-      {
-        user: user._id, vehicle: createdVehicles[4]._id,
-        pickupLocation: 'HSR Layout, Bangalore', dropLocation: 'HSR Layout, Bangalore',
-        pickupDate: new Date('2025-05-15'), returnDate: new Date('2025-05-16'),
-        totalDays: 1, totalAmount: 999, status: 'cancelled', paymentStatus: 'refunded', paymentMethod: 'card',
-      },
-      {
-        user: user._id, vehicle: createdVehicles[2]._id,
-        pickupLocation: 'MG Road, Bangalore', dropLocation: 'Airport, Bangalore',
-        pickupDate: new Date('2025-06-01'), returnDate: new Date('2025-06-03'),
-        totalDays: 2, totalAmount: 3998, status: 'confirmed', paymentStatus: 'paid', paymentMethod: 'netbanking',
-      },
+      { user: user._id, vehicle: createdVehicles[0]._id, pickupLocation: 'Koramangala, Bangalore', dropLocation: 'Koramangala, Bangalore', pickupDate: new Date('2025-05-21'), returnDate: new Date('2025-05-23'), totalDays: 2, totalAmount: 998, status: 'confirmed', paymentStatus: 'paid', paymentMethod: 'upi' },
+      { user: user._id, vehicle: createdVehicles[1]._id, pickupLocation: 'Indiranagar, Bangalore', dropLocation: 'Indiranagar, Bangalore', pickupDate: new Date('2025-05-20'), returnDate: new Date('2025-05-21'), totalDays: 1, totalAmount: 249, status: 'completed', paymentStatus: 'paid', paymentMethod: 'card' },
+      { user: user._id, vehicle: createdVehicles[4]._id, pickupLocation: 'HSR Layout, Bangalore', dropLocation: 'HSR Layout, Bangalore', pickupDate: new Date('2025-05-15'), returnDate: new Date('2025-05-16'), totalDays: 1, totalAmount: 999, status: 'cancelled', paymentStatus: 'refunded', paymentMethod: 'card' },
+      { user: user._id, vehicle: createdVehicles[2]._id, pickupLocation: 'MG Road, Bangalore', dropLocation: 'Airport, Bangalore', pickupDate: new Date('2025-06-01'), returnDate: new Date('2025-06-03'), totalDays: 2, totalAmount: 3998, status: 'confirmed', paymentStatus: 'paid', paymentMethod: 'netbanking' },
     ];
-
     await Booking.insertMany(bookings);
     console.log(`📋 Created ${bookings.length} sample bookings`);
 
@@ -178,11 +171,12 @@ const seedDB = async () => {
     console.log('📧 Admin:  admin@ridex.com  / admin123');
     console.log('📧 User:   ramu@example.com / test123');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    process.exit(0);
   } catch (err) {
     console.error('❌ Seeding error:', err);
-    process.exit(1);
+    if (require.main === module) process.exit(1);
   }
 };
 
-seedDB();
+module.exports = { seedIfEmpty };
+
+if (require.main === module) seedDB();

@@ -1,71 +1,70 @@
-# RideX — React Edition
+# RideX — React Edition (Single Service)
 
-Full-stack vehicle rental platform. Node.js + Express + MongoDB + Socket.IO backend, React SPA frontend.
+Full-stack vehicle rental platform. Node + Express + MongoDB + Socket.IO backend that also serves the React SPA — **one deploy, one URL, one bill**.
 
 ## Structure
 ```
-backend/     Node/Express API + MongoDB + Socket.IO
+backend/     Node/Express API + Socket.IO + serves frontend/build
 frontend/    React SPA (Create React App)
-render.yaml  One-click Render deploy blueprint (both services)
+render.yaml  One-click Render deploy blueprint (single web service)
 ```
 
 ---
 
-## 🚀 One-click deploy to Render
+## 🚀 One-click deploy to Render (single service)
 
-1. **Push this repo to GitHub** (via Emergent's "Save to GitHub" button, or `git push`).
-2. Create a **free MongoDB Atlas cluster** ([atlas.mongodb.com](https://www.mongodb.com/cloud/atlas)):
-   - Add IP `0.0.0.0/0` to Network Access
-   - Copy the connection string (looks like `mongodb+srv://user:pass@cluster.xyz.mongodb.net/ridex?retryWrites=true&w=majority`)
-3. In Render dashboard → **New +** → **Blueprint** → connect the repo.
-4. Render reads `render.yaml` and provisions:
-   - `ridex-backend` (Node web service on free tier)
-   - `ridex-frontend` (Static site on free tier)
-5. When prompted, paste your **MONGO_URI** (the only manual value).
-6. Wait ~3-5 min for both services to build.
-7. Open the backend URL once → visit `/api/health` → should return `{"status":"OK"}`.
-8. **Seed the DB once** — in the `ridex-backend` service → **Shell** tab → run:
-   ```
-   node seeder.js
-   ```
-   This creates the demo admin + user + 16 vehicles.
-9. Open the frontend URL — you're live 🎉
+1. **Push this repo to GitHub** (Emergent's "Save to GitHub" button, or `git push`).
+2. **MongoDB Atlas** — create a free cluster ([atlas.mongodb.com](https://www.mongodb.com/cloud/atlas)):
+   - Database Access → add a user (username + password).
+   - Network Access → allow `0.0.0.0/0`.
+   - Databases → Connect → Drivers → copy the connection string:
+     ```
+     mongodb+srv://<user>:<password>@cluster.xxxxx.mongodb.net/ridex?retryWrites=true&w=majority
+     ```
+3. **Render dashboard** → **New +** → **Blueprint** → pick your repo. Render reads `render.yaml` and shows **one service**: `ridex`.
+4. Paste your **`MONGO_URI`** when prompted (only manual value).
+5. Click **Apply**. Render builds React + installs backend + starts the server (~4-6 min).
+6. **Open the service URL** (e.g. `https://ridex.onrender.com`) → the home page loads.
+   - The DB **auto-seeds** on first boot (admin, user, 16 vehicles) — no Shell needed.
 
 ### Demo logins
 - Admin: `admin@ridex.com` / `admin123`
 - User:  `ramu@example.com` / `test123`
 
 ### Coupon codes
-- `RIDE10` (10% off) · `RIDE20` (20% off) · `FIRST50` (50% off)
+`RIDE10` (10% off) · `RIDE20` (20% off) · `FIRST50` (50% off)
 
 ---
 
 ## 🛠 Local development
 
-### Backend
+### Full-stack single-server mode
 ```bash
-cd backend
-cp .env.example .env       # edit MONGO_URI if needed
-npm install
-node seeder.js             # seeds demo data
-npm start                  # runs on PORT (default 8001)
+cd frontend && yarn install && yarn build   # produces frontend/build
+cd ../backend && npm install
+node server.js                              # http://localhost:8001
 ```
-Requires MongoDB running locally at `mongodb://localhost:27017/ridex`.
 
-### Frontend
+### Dev mode (hot reload)
+Run backend and frontend separately:
 ```bash
+# terminal 1
+cd backend && npm install && npm run dev     # http://localhost:8001
+
+# terminal 2
 cd frontend
-cp .env.example .env       # points to http://localhost:8001
-yarn install
-yarn start                 # runs on port 3000
+echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
+yarn install && yarn start                    # http://localhost:3000
 ```
+
+MongoDB must be reachable at `MONGO_URI` (defaults to `mongodb://localhost:27017/ridex`).
 
 ---
 
 ## 🧠 Notes
 
-- **Payments are mocked** (`routes/payments.js`) — always succeed. No real gateway.
-- **Contact messages** are stored in memory in the backend and reset on restart.
-- **Socket.IO** is mounted at `/api/socket.io/` so it goes through the same ingress path as the REST API. The React `SocketContext` connects on load, joins `public` (+ `user:<id>` + `admin` where relevant), and re-broadcasts as `CustomEvent`s.
-- **Free-tier cold starts** — Render free web services sleep after 15 min of inactivity; the first request wakes them in ~30-60s.
-- **CORS** — the backend reads `CORS_ORIGIN` env var; `render.yaml` auto-fills it with the frontend URL. Locally it defaults to `*`.
+- **Auto-seed**: `seedIfEmpty()` runs at boot. If the DB already has users/vehicles it skips silently. To force a fresh seed run `node seeder.js` manually.
+- **Payments are mocked** — `routes/payments.js` always succeeds. Swap for Stripe/Razorpay in production.
+- **Contact messages** are stored in memory (reset on restart). Swap for a Mongoose model to persist.
+- **Socket.IO** is mounted at `/api/socket.io/` so it flows through the same path prefix as the REST API — this keeps single-origin deployments and reverse proxies happy.
+- **Free-tier cold starts** on Render sleep after 15 min of inactivity; first request wakes the service in ~30-60s.
