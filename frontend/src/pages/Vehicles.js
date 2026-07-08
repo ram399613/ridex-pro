@@ -49,7 +49,7 @@ const Vehicles = () => {
   useEffect(() => {
     if (type === 'all') params.delete('type'); else params.set('type', type);
     setParams(params, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [type]);
 
   const clearFilters = () => { setType('all'); setSort('recent'); setSearch(''); setMaxPrice(''); setOnlyAvail(false); };

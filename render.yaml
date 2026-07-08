@@ -1,21 +1,8 @@
-# Render Blueprint — deploys RideX as a SINGLE web service.
-# The Node backend also serves the built React frontend, so both live at the
-# same URL (e.g. https://ridex.onrender.com). No Shell access needed —
-# the DB auto-seeds on first boot if it's empty.
-#
-# HOW TO DEPLOY:
-# 1. Push this repo to GitHub.
-# 2. Create a free MongoDB Atlas cluster; whitelist 0.0.0.0/0; copy the URI.
-# 3. Render Dashboard -> New + -> Blueprint -> pick your repo.
-# 4. When prompted, paste MONGO_URI. Everything else is auto-set.
-# 5. Wait 3-5 min; open the service URL. Log in with the seeded credentials.
-
 services:
   - type: web
     name: ridex
     runtime: node
     plan: free
-    # Build the React frontend, then install backend deps.
     buildCommand: cd frontend && yarn install --frozen-lockfile && yarn build && cd ../backend && npm install
     startCommand: cd backend && node server.js
     healthCheckPath: /api/health
@@ -23,8 +10,6 @@ services:
       - key: NODE_ENV
         value: production
       - key: JWT_SECRET
-        generateValue: true          # Render auto-generates a strong secret
+        generateValue: true
       - key: MONGO_URI
-        sync: false                  # User must paste MongoDB Atlas URI in dashboard
-      # No CORS_ORIGIN needed — frontend and backend share the same origin.
-      # No REACT_APP_BACKEND_URL needed — API calls are relative.
+        sync: false
