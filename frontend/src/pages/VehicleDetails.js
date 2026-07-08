@@ -25,57 +25,60 @@ const VehicleDetails = () => {
     navigate(`/booking/${v._id}`);
   };
 
-  if (loading) return <div style={{ paddingTop: 120 }}><div className="spinner"></div></div>;
-  if (!v) return <div className="empty-state" style={{ paddingTop: 140 }}><i className="fa-solid fa-triangle-exclamation"></i>Vehicle not found.</div>;
+  if (loading) return <div className="pt-32"><div className="spinner"></div></div>;
+  if (!v) return <div className="text-center pt-36 text-muted-faint"><i className="fa-solid fa-triangle-exclamation text-5xl block mb-4"></i>Vehicle not found.</div>;
 
   const rating = v.rating || 4.5;
   const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+  const specs = [
+    ['Engine', v.specs?.engine], ['Mileage', v.specs?.mileage], ['Transmission', v.specs?.transmission],
+    ['Fuel', v.specs?.fuelType], ['Seats', v.specs?.seats], ['Power', v.specs?.power],
+  ];
 
   return (
     <>
-      <header className="page-header">
-        <div className="container">
-          <div className="breadcrumb"><Link to="/">Home</Link> / <Link to="/vehicles">Vehicles</Link> / <span>{v.name}</span></div>
+      <header className="pt-28 pb-10 bg-ink-900/80 border-b border-ink-700">
+        <div className="max-w-7xl mx-auto px-6 flex items-center gap-2 text-xs text-muted-faint">
+          <Link to="/" className="hover:text-brand">Home</Link> / <Link to="/vehicles" className="hover:text-brand">Vehicles</Link> / <span className="text-white">{v.name}</span>
         </div>
       </header>
-      <section className="section container" data-testid="vehicle-details">
-        <div className="two-col">
-          <div className="card" style={{ overflow: 'hidden' }}>
-            <img src={v.images?.[0]} alt={v.name} style={{ width: '100%', height: 420, objectFit: 'cover' }}
-              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      <section className="py-16 max-w-7xl mx-auto px-6" data-testid="vehicle-details">
+        <div className="grid lg:grid-cols-2 gap-10">
+          <div className="card-flat">
+            <img src={v.images?.[0]} alt={v.name} className="w-full h-[420px] object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
           </div>
           <div>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-              <span className="vehicle-badge" style={{ position: 'static' }}>{v.type}</span>
-              <span className={`vehicle-avail ${v.available ? 'available' : 'unavailable'}`} style={{ position: 'static' }} data-testid="vehicle-availability">
-                {v.available ? '● Available' : '● Booked'}
+            <div className="flex gap-2.5 mb-3">
+              <span className="px-3 py-1 bg-brand text-white rounded-full text-xs font-semibold capitalize">{v.type}</span>
+              <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${v.available ? 'bg-green-500/15 text-green-400 border-green-500/30' : 'bg-red-500/15 text-red-400 border-red-500/30'}`} data-testid="vehicle-availability">
+                ● {v.available ? 'Available' : 'Booked'}
               </span>
             </div>
-            <h1 style={{ marginBottom: 8 }}>{v.name}</h1>
-            <p style={{ marginBottom: 12 }}>{v.brand} · {v.color}</p>
-            <div className="vehicle-rating" style={{ marginBottom: 20 }}>
-              <span className="stars">{stars}</span>
-              <span className="rating-count">{rating} · {v.totalReviews || 0} reviews</span>
+            <h1 className="text-4xl font-extrabold mb-2">{v.name}</h1>
+            <p className="text-muted mb-3">{v.brand} · {v.color}</p>
+            <div className="flex items-center gap-2 mb-5">
+              <span className="text-amber-400 text-lg">{stars}</span>
+              <span className="text-xs text-muted-faint">{rating} · {v.totalReviews || 0} reviews</span>
             </div>
-            <div className="vehicle-price" style={{ marginBottom: 24 }}>
-              <span className="price-amount" style={{ fontSize: '2.4rem' }}>₹{v.pricePerDay}</span>
-              <span className="price-unit">/day</span>
+            <div className="flex items-baseline gap-2 mb-6">
+              <span className="text-5xl font-extrabold text-brand">₹{v.pricePerDay}</span>
+              <span className="text-sm text-muted-faint">/day</span>
             </div>
-            <p style={{ marginBottom: 24 }}>{v.description}</p>
+            <p className="text-muted mb-6">{v.description}</p>
 
-            <div className="card-body" style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: 20 }}>
-              <div className="footer-title" style={{ marginBottom: 12 }}>Specifications</div>
-              <div className="three-col" style={{ gap: 12 }}>
-                <div><div className="stat-label">Engine</div><div className="vehicle-name">{v.specs?.engine || '—'}</div></div>
-                <div><div className="stat-label">Mileage</div><div className="vehicle-name">{v.specs?.mileage || '—'}</div></div>
-                <div><div className="stat-label">Transmission</div><div className="vehicle-name">{v.specs?.transmission}</div></div>
-                <div><div className="stat-label">Fuel</div><div className="vehicle-name">{v.specs?.fuelType}</div></div>
-                <div><div className="stat-label">Seats</div><div className="vehicle-name">{v.specs?.seats}</div></div>
-                <div><div className="stat-label">Power</div><div className="vehicle-name">{v.specs?.power || '—'}</div></div>
+            <div className="bg-ink-900 border border-ink-700 rounded-xl p-5 mb-5">
+              <div className="text-sm font-bold uppercase tracking-wider mb-3">Specifications</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {specs.map(([label, val]) => (
+                  <div key={label}>
+                    <div className="text-[11px] text-muted-faint">{label}</div>
+                    <div className="font-bold">{val || '—'}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <button className="btn btn-primary btn-lg btn-block" onClick={bookNow} disabled={!v.available} data-testid="book-now-btn">
+            <button className="btn-primary btn-lg btn-block" onClick={bookNow} disabled={!v.available} data-testid="book-now-btn">
               {v.available ? 'Book Now' : 'Not Available'} <i className="fa-solid fa-arrow-right"></i>
             </button>
           </div>

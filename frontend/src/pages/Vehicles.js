@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import VehicleCard from '../components/VehicleCard';
@@ -27,8 +27,7 @@ const Vehicles = () => {
         if (onlyAvail) q.set('available', 'true');
         const { data } = await api.get(`/vehicles?${q.toString()}`);
         setVehicles(data);
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
+      } finally { setLoading(false); }
     };
     load();
   }, [type, sort, search, maxPrice, onlyAvail]);
@@ -50,47 +49,48 @@ const Vehicles = () => {
   useEffect(() => {
     if (type === 'all') params.delete('type'); else params.set('type', type);
     setParams(params, { replace: true });
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
-
-  const results = useMemo(() => vehicles, [vehicles]);
 
   const clearFilters = () => { setType('all'); setSort('recent'); setSearch(''); setMaxPrice(''); setOnlyAvail(false); };
 
   return (
     <>
-      <header className="page-header">
-        <div className="container">
-          <div className="breadcrumb"><Link to="/">Home</Link> / <span>Vehicles</span></div>
-          <h1>Explore <span style={{ color: 'var(--orange)' }}>Vehicles</span></h1>
-          <p style={{ marginTop: 8 }}>{results.length} rides available</p>
+      <header className="pt-28 pb-12 bg-ink-900/80 border-b border-ink-700">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center gap-2 text-xs text-muted-faint mb-3"><Link to="/" className="hover:text-brand">Home</Link> / <span className="text-white">Vehicles</span></div>
+          <h1 className="text-4xl font-extrabold">Explore <span className="text-brand">Vehicles</span></h1>
+          <p className="mt-2 text-muted">{vehicles.length} rides available</p>
         </div>
       </header>
 
-      <section className="section container">
-        <div className="vehicles-layout">
-          <aside className="filter-sidebar" data-testid="filter-sidebar">
-            <div className="filter-title">Filters <button className="filter-clear" onClick={clearFilters} data-testid="filter-clear">Clear all</button></div>
+      <section className="py-16 max-w-7xl mx-auto px-6">
+        <div className="grid lg:grid-cols-[260px,1fr] gap-6 items-start">
+          <aside className="bg-ink-800 border border-ink-700 rounded-2xl p-6 lg:sticky lg:top-24" data-testid="filter-sidebar">
+            <div className="flex items-center justify-between mb-5">
+              <div className="font-bold text-base">Filters</div>
+              <button onClick={clearFilters} className="text-xs text-brand font-medium hover:underline" data-testid="filter-clear">Clear all</button>
+            </div>
 
-            <div className="filter-section">
-              <div className="filter-section-title">Search</div>
+            <div className="border-b border-ink-700 pb-5 mb-5">
+              <div className="text-xs font-semibold text-muted-faint uppercase tracking-wide mb-3">Search</div>
               <input className="form-control" placeholder="Yamaha, Swift…" value={search} onChange={(e) => setSearch(e.target.value)} data-testid="filter-search" />
             </div>
 
-            <div className="filter-section">
-              <div className="filter-section-title">Type</div>
-              <div className="filter-options">
+            <div className="border-b border-ink-700 pb-5 mb-5">
+              <div className="text-xs font-semibold text-muted-faint uppercase tracking-wide mb-3">Type</div>
+              <div className="flex flex-col gap-2">
                 {TYPES.map(t => (
-                  <div key={t} className="filter-option">
-                    <input type="radio" id={`t-${t}`} name="type" checked={type === t} onChange={() => setType(t)} data-testid={`filter-type-${t}`} />
-                    <label htmlFor={`t-${t}`} style={{ textTransform: 'capitalize' }}>{t}</label>
-                  </div>
+                  <label key={t} className="flex items-center gap-2.5 cursor-pointer text-sm text-muted hover:text-white">
+                    <input type="radio" name="type" checked={type === t} onChange={() => setType(t)} className="accent-brand w-4 h-4 cursor-pointer" data-testid={`filter-type-${t}`} />
+                    <span className="capitalize">{t}</span>
+                  </label>
                 ))}
               </div>
             </div>
 
-            <div className="filter-section">
-              <div className="filter-section-title">Sort by</div>
+            <div className="border-b border-ink-700 pb-5 mb-5">
+              <div className="text-xs font-semibold text-muted-faint uppercase tracking-wide mb-3">Sort by</div>
               <select className="form-control" value={sort} onChange={(e) => setSort(e.target.value)} data-testid="filter-sort">
                 <option value="recent">Recently added</option>
                 <option value="price_asc">Price: Low → High</option>
@@ -99,29 +99,25 @@ const Vehicles = () => {
               </select>
             </div>
 
-            <div className="filter-section">
-              <div className="filter-section-title">Max price / day</div>
-              <div className="price-inputs">
-                <input className="form-control" type="number" placeholder="₹" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} data-testid="filter-max-price" />
-              </div>
+            <div className="border-b border-ink-700 pb-5 mb-5">
+              <div className="text-xs font-semibold text-muted-faint uppercase tracking-wide mb-3">Max price / day</div>
+              <input className="form-control" type="number" placeholder="₹" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} data-testid="filter-max-price" />
             </div>
 
-            <div className="filter-section">
-              <div className="filter-option">
-                <input type="checkbox" id="avail" checked={onlyAvail} onChange={(e) => setOnlyAvail(e.target.checked)} data-testid="filter-available" />
-                <label htmlFor="avail">Only available</label>
-              </div>
-            </div>
+            <label className="flex items-center gap-2.5 cursor-pointer text-sm text-muted hover:text-white">
+              <input type="checkbox" checked={onlyAvail} onChange={(e) => setOnlyAvail(e.target.checked)} className="accent-brand w-4 h-4 cursor-pointer" data-testid="filter-available" />
+              Only available
+            </label>
           </aside>
 
           <div>
             {loading ? (
-              <div style={{ padding: 80 }}><div className="spinner"></div></div>
-            ) : results.length === 0 ? (
-              <div className="empty-state"><i className="fa-solid fa-magnifying-glass"></i>No vehicles match your filters.</div>
+              <div className="py-20"><div className="spinner"></div></div>
+            ) : vehicles.length === 0 ? (
+              <div className="text-center py-20 text-muted-faint"><i className="fa-solid fa-magnifying-glass text-5xl text-ink-600 block mb-4"></i>No vehicles match your filters.</div>
             ) : (
-              <div className="vehicles-grid" data-testid="vehicles-grid">
-                {results.map(v => <VehicleCard key={v._id} v={v} />)}
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6" data-testid="vehicles-grid">
+                {vehicles.map(v => <VehicleCard key={v._id} v={v} />)}
               </div>
             )}
           </div>

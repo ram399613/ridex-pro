@@ -4,6 +4,16 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
+const StatCard = ({ icon, color, value, label, testid }) => (
+  <div className="bg-ink-800 border border-ink-700 rounded-xl p-5 flex items-center gap-4 transition-all hover:border-brand">
+    <div className={`w-13 h-13 rounded-lg flex items-center justify-center text-2xl ${color}`}><i className={`fa-solid ${icon}`}></i></div>
+    <div>
+      <div className="text-2xl font-extrabold leading-none mb-1" data-testid={testid}>{value}</div>
+      <div className="text-xs text-muted-faint">{label}</div>
+    </div>
+  </div>
+);
+
 const Dashboard = () => {
   const { user, setUser } = useAuth();
   const { showToast } = useToast();
@@ -37,44 +47,46 @@ const Dashboard = () => {
     } catch (err) { showToast(err.response?.data?.message || 'Failed', 'error'); }
   };
 
+  const sidebarBtn = (active) => `w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-brand/10 text-brand border border-brand/20' : 'text-muted hover:bg-ink-800 hover:text-white'}`;
+
   return (
-    <div className="sidebar-layout" data-testid="dashboard-page">
-      <aside className="sidebar">
-        <div className="sidebar-logo">Ride<span>X</span></div>
-        <div className="sidebar-label">Account</div>
-        <button className={`sidebar-link ${tab === 'overview' ? 'active' : ''}`} onClick={() => setTab('overview')} data-testid="tab-overview"><span className="icon"><i className="fa-solid fa-gauge"></i></span> Overview</button>
-        <Link to="/my-bookings" className="sidebar-link"><span className="icon"><i className="fa-solid fa-calendar-check"></i></span> My Bookings</Link>
-        <button className={`sidebar-link ${tab === 'profile' ? 'active' : ''}`} onClick={() => setTab('profile')} data-testid="tab-profile"><span className="icon"><i className="fa-solid fa-user"></i></span> Profile</button>
-        <Link to="/vehicles" className="sidebar-link"><span className="icon"><i className="fa-solid fa-motorcycle"></i></span> Browse Vehicles</Link>
+    <div className="flex min-h-screen pt-16" data-testid="dashboard-page">
+      <aside className="hidden md:block w-60 fixed top-16 bottom-0 bg-ink-900/90 border-r border-ink-700 p-4 overflow-y-auto">
+        <div className="text-lg font-extrabold pb-5 border-b border-ink-700 mb-5">Ride<span className="text-brand">X</span></div>
+        <div className="text-[10px] font-semibold text-muted-faint uppercase tracking-wider px-2 mb-1">Account</div>
+        <button className={sidebarBtn(tab === 'overview')} onClick={() => setTab('overview')} data-testid="tab-overview"><i className="fa-solid fa-gauge w-5 text-center"></i> Overview</button>
+        <Link to="/my-bookings" className={sidebarBtn(false)}><i className="fa-solid fa-calendar-check w-5 text-center"></i> My Bookings</Link>
+        <button className={sidebarBtn(tab === 'profile')} onClick={() => setTab('profile')} data-testid="tab-profile"><i className="fa-solid fa-user w-5 text-center"></i> Profile</button>
+        <Link to="/vehicles" className={sidebarBtn(false)}><i className="fa-solid fa-motorcycle w-5 text-center"></i> Browse Vehicles</Link>
       </aside>
 
-      <div className="main-content">
+      <div className="flex-1 md:ml-60 p-6 lg:p-8">
         {tab === 'overview' && (
           <>
-            <h2 style={{ marginBottom: 8 }}>Welcome, <span style={{ color: 'var(--orange)' }}>{user?.name?.split(' ')[0]}</span></h2>
-            <p style={{ marginBottom: 24 }}>Here's your activity at a glance.</p>
-            <div className="stats-grid" style={{ marginBottom: 32 }}>
-              <div className="stat-card"><div className="stat-icon orange"><i className="fa-solid fa-calendar-check"></i></div><div><div className="stat-value" data-testid="stat-total">{stats.total}</div><div className="stat-label">Total Bookings</div></div></div>
-              <div className="stat-card"><div className="stat-icon green"><i className="fa-solid fa-circle-check"></i></div><div><div className="stat-value">{stats.confirmed}</div><div className="stat-label">Confirmed</div></div></div>
-              <div className="stat-card"><div className="stat-icon blue"><i className="fa-solid fa-hourglass-half"></i></div><div><div className="stat-value">{stats.pending}</div><div className="stat-label">Pending</div></div></div>
-              <div className="stat-card"><div className="stat-icon purple"><i className="fa-solid fa-rupee-sign"></i></div><div><div className="stat-value">₹{stats.spent}</div><div className="stat-label">Total Spent</div></div></div>
+            <h2 className="text-3xl font-extrabold mb-2">Welcome, <span className="text-brand">{user?.name?.split(' ')[0]}</span></h2>
+            <p className="text-muted mb-6">Here's your activity at a glance.</p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+              <StatCard icon="fa-calendar-check" color="bg-brand/15 text-brand" value={stats.total} label="Total Bookings" testid="stat-total" />
+              <StatCard icon="fa-circle-check" color="bg-green-500/15 text-green-400" value={stats.confirmed} label="Confirmed" />
+              <StatCard icon="fa-hourglass-half" color="bg-blue-500/15 text-blue-400" value={stats.pending} label="Pending" />
+              <StatCard icon="fa-rupee-sign" color="bg-violet-500/15 text-violet-400" value={`₹${stats.spent}`} label="Total Spent" />
             </div>
 
-            <h3 style={{ marginBottom: 16 }}>Recent bookings</h3>
+            <h3 className="text-xl font-bold mb-4">Recent bookings</h3>
             {bookings.length === 0 ? (
-              <div className="empty-state"><i className="fa-solid fa-inbox"></i>No bookings yet. <Link to="/vehicles" style={{ color: 'var(--orange)' }}>Book your first ride</Link></div>
+              <div className="text-center py-16 text-muted-faint"><i className="fa-solid fa-inbox text-5xl block mb-4"></i>No bookings yet. <Link to="/vehicles" className="text-brand font-medium">Book your first ride</Link></div>
             ) : (
-              <div className="table-wrap">
-                <table>
-                  <thead><tr><th>Booking</th><th>Vehicle</th><th>Dates</th><th>Amount</th><th>Status</th></tr></thead>
+              <div className="overflow-x-auto rounded-xl border border-ink-700 bg-ink-800">
+                <table className="w-full text-sm">
+                  <thead className="bg-ink-900"><tr>{['Booking','Vehicle','Dates','Amount','Status'].map(h => <th key={h} className="px-4 py-3.5 text-left text-xs font-semibold text-muted-faint uppercase tracking-wide">{h}</th>)}</tr></thead>
                   <tbody>
                     {bookings.slice(0, 5).map(b => (
-                      <tr key={b._id}>
-                        <td style={{ fontFamily: 'monospace' }}>{b.bookingId}</td>
-                        <td style={{ color: 'var(--text-primary)' }}>{b.vehicle?.name}</td>
-                        <td>{new Date(b.pickupDate).toLocaleDateString()}</td>
-                        <td>₹{b.totalAmount}</td>
-                        <td><span className={`badge badge-${b.status}`}>{b.status}</span></td>
+                      <tr key={b._id} className="border-t border-ink-700 hover:bg-ink-750">
+                        <td className="px-4 py-3.5 font-mono">{b.bookingId}</td>
+                        <td className="px-4 py-3.5 text-white">{b.vehicle?.name}</td>
+                        <td className="px-4 py-3.5 text-muted">{new Date(b.pickupDate).toLocaleDateString()}</td>
+                        <td className="px-4 py-3.5">₹{b.totalAmount}</td>
+                        <td className="px-4 py-3.5"><span className={`badge badge-${b.status}`}>{b.status}</span></td>
                       </tr>
                     ))}
                   </tbody>
@@ -86,25 +98,13 @@ const Dashboard = () => {
 
         {tab === 'profile' && (
           <>
-            <h2 style={{ marginBottom: 24 }}>Profile settings</h2>
-            <form className="card card-body" onSubmit={saveProfile} style={{ padding: 32, maxWidth: 640 }}>
-              <div className="form-group">
-                <label className="form-label">Full name</label>
-                <input className="form-control" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} data-testid="profile-name" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Email</label>
-                <input className="form-control" value={user?.email || ''} disabled />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Phone</label>
-                <input className="form-control" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} data-testid="profile-phone" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Address</label>
-                <textarea className="form-control" rows="3" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} data-testid="profile-address" />
-              </div>
-              <button className="btn btn-primary" data-testid="profile-save">Save changes</button>
+            <h2 className="text-3xl font-extrabold mb-6">Profile settings</h2>
+            <form className="card-flat p-8 max-w-2xl" onSubmit={saveProfile}>
+              <div className="mb-4"><label className="form-label">Full name</label><input className="form-control" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} data-testid="profile-name" /></div>
+              <div className="mb-4"><label className="form-label">Email</label><input className="form-control" value={user?.email || ''} disabled /></div>
+              <div className="mb-4"><label className="form-label">Phone</label><input className="form-control" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} data-testid="profile-phone" /></div>
+              <div className="mb-5"><label className="form-label">Address</label><textarea className="form-control" rows="3" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} data-testid="profile-address" /></div>
+              <button className="btn-primary" data-testid="profile-save">Save changes</button>
             </form>
           </>
         )}
