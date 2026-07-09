@@ -22,14 +22,24 @@ RideX Pro is a full-stack, responsive vehicle rental platform that allows users 
 ## 🏗️ Project Structure
 ```text
 ridex-pro/
-├── backend/       # Node/Express API + Socket.IO + serves frontend build
-│   ├── models/    # Mongoose schemas (User, Vehicle, Booking)
-│   ├── routes/    # Express API routes
-│   └── server.js  # Main application entry point
-├── frontend/      # React + Tailwind CSS SPA
-│   ├── src/       # React components and pages
-│   └── public/    # Static assets
-└── render.yaml    # Render Blueprint for automated deployment
+├── backend/       # Node/Express API + Socket.IO server
+│   ├── config/    # Database connection setup
+│   ├── middleware/# Custom middleware (e.g., auth, error handling)
+│   ├── models/    # Mongoose data schemas (User, Vehicle, Booking)
+│   ├── routes/    # Express REST API routes
+│   ├── seeder.js  # Script to populate DB with initial mock data
+│   ├── server.js  # Main application entry point & logic
+│   └── socket.js  # Real-time WebSockets logic
+├── frontend/      # React + Tailwind CSS Single Page Application
+│   ├── public/    # Static assets (HTML, icons, fonts)
+│   ├── src/       # React components, pages, styles, and context
+│   │   ├── components/ # Reusable UI components
+│   │   ├── pages/      # Full-page view components
+│   │   └── styles/     # Tailwind index & global CSS
+│   └── package.json # Frontend dependencies and scripts
+├── .gitignore     # Files ignored by Git (like node_modules, .env)
+├── .gitconfig     # Project-specific Git configuration
+└── render.yaml    # Render Blueprint for fully automated CI/CD deployments
 ```
 
 ## 🚀 One-Click Deploy to Render
@@ -63,17 +73,14 @@ cd ridex-pro
 ### 2. Backend Setup
 ```bash
 cd backend
-cp .env.example .env
-# Edit .env and set your MONGO_URI if you don't want to use localhost
 npm install
 node server.js
 ```
-*Note: MongoDB must be reachable at `MONGO_URI` (defaults to `mongodb://localhost:27017/ridex`).*
+*Note: Make sure your `.env` file is set up with your `MONGO_URI`.*
 
 ### 3. Frontend Setup
 ```bash
 cd frontend
-cp .env.example .env
 npm install
 npm start
 ```
