@@ -1,6 +1,10 @@
-# RideX
+# RideX Pro
 
 Vehicle rental platform — Node/Express + MongoDB + Socket.IO backend, React + Tailwind CSS frontend, single-service deployment.
+
+## Links
+- **Live Demo**: [https://ridex-pro.onrender.com/](https://ridex-pro.onrender.com/)
+- **GitHub Repository**: [https://github.com/ram399613/ridex-pro](https://github.com/ram399613/ridex-pro)
 
 ## Structure
 ```
