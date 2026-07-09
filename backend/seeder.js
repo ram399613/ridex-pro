@@ -3,7 +3,6 @@ const connectDB = require('./config/db');
 const User = require('./models/User');
 const Vehicle = require('./models/Vehicle');
 const Booking = require('./models/Booking');
-const { imageFor } = require('./vehicleImages');
 
 const vehicles = [
   {
@@ -153,8 +152,7 @@ const seedIfEmpty = async (force = false) => {
     console.log(`👤 Created admin: ${admin.email}`);
     console.log(`👤 Created user:  ${user.email}`);
 
-    const vehiclesWithFastImages = vehicles.map(v => ({ ...v, images: [imageFor(v)] }));
-    const createdVehicles = await Vehicle.insertMany(vehiclesWithFastImages);
+    const createdVehicles = await Vehicle.insertMany(vehicles);
     console.log(`🚗 Created ${createdVehicles.length} vehicles`);
 
     const bookings = [
@@ -179,19 +177,21 @@ const seedIfEmpty = async (force = false) => {
 
 const migrateImages = async () => {
   try {
-    const legacyRe = /(wikimedia|Special:FilePath)/i;
     const all = await Vehicle.find({});
     let touched = 0;
     for (const v of all) {
-      const current = v.images?.[0] || '';
-      const desired = imageFor(v);
-      if (!current || legacyRe.test(current) || current !== desired) {
-        v.images = [desired];
-        await v.save();
-        touched += 1;
+      const originalVehicle = vehicles.find(ov => ov.name === v.name);
+      if (originalVehicle) {
+        const correctImage = originalVehicle.images[0];
+        const current = v.images?.[0] || '';
+        if (current !== correctImage) {
+          v.images = [correctImage];
+          await v.save();
+          touched += 1;
+        }
       }
     }
-    if (touched > 0) console.log(`🖼️  Migrated ${touched} vehicle image(s) to Unsplash CDN`);
+    if (touched > 0) console.log(`🖼️  Restored ${touched} vehicle image(s) to original Wikimedia sources`);
   } catch (err) {
     console.error('Image migration failed:', err.message);
   }
