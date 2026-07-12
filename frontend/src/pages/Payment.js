@@ -33,7 +33,7 @@ const Payment = () => {
   };
 
   if (!booking) return <div className="pt-32"><div className="spinner"></div></div>;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=ridex@upi&pn=RideX&am=${booking.totalAmount}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=8712134359@ybl&pn=RideX&am=${booking.totalAmount}`;
 
   return (
     <>
@@ -59,7 +59,7 @@ const Payment = () => {
                 <div className="w-44 h-44 bg-white rounded-xl overflow-hidden"><img src={qrUrl} alt="qr" /></div>
                 <div className="text-center">
                   <div className="font-bold">Scan to pay ₹{booking.totalAmount}</div>
-                  <div className="text-xs text-muted-faint">UPI ID: ridex@upi</div>
+                  <div className="text-xs text-muted-faint">UPI ID: 8712134359@ybl</div>
                 </div>
                 <div className="flex gap-3 flex-wrap justify-center">
                   {['GPay', 'PhonePe', 'Paytm', 'BHIM'].map(a => (
@@ -83,9 +83,27 @@ const Payment = () => {
             )}
 
             {method === 'netbanking' && (
-              <div data-testid="nb-panel">
-                <label className="form-label">Select bank</label>
-                <select className="form-control"><option>HDFC Bank</option><option>ICICI Bank</option><option>SBI</option><option>Axis Bank</option><option>Kotak</option></select>
+              <div className="p-6 bg-ink-900 border border-ink-700 rounded-xl" data-testid="nb-panel">
+                <h3 className="font-bold mb-4 text-white">Direct Bank Transfer</h3>
+                <p className="text-sm text-muted-faint mb-6">Please transfer <span className="font-bold text-white">₹{booking.totalAmount}</span> to the following bank account to confirm your booking.</p>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between border-b border-ink-800 pb-2">
+                    <span className="text-muted-faint">Bank Name</span>
+                    <span className="font-bold text-white">[YOUR BANK NAME]</span>
+                  </div>
+                  <div className="flex justify-between border-b border-ink-800 pb-2">
+                    <span className="text-muted-faint">Account Name</span>
+                    <span className="font-bold text-white">[YOUR ACCOUNT NAME]</span>
+                  </div>
+                  <div className="flex justify-between border-b border-ink-800 pb-2">
+                    <span className="text-muted-faint">Account Number</span>
+                    <span className="font-bold text-brand">[YOUR ACCOUNT NUMBER]</span>
+                  </div>
+                  <div className="flex justify-between pb-2">
+                    <span className="text-muted-faint">IFSC Code</span>
+                    <span className="font-bold text-white">[YOUR IFSC CODE]</span>
+                  </div>
+                </div>
               </div>
             )}
 
