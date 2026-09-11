@@ -7,8 +7,8 @@ const { emitAdminBookingUpdated, emitUserNotification } = require('../socket');
 
 const PAYMENT_METHODS = ['upi', 'card', 'netbanking', 'cash'];
 const paymentConfig = () => {
-  const mode = process.env.PAYMENT_MODE === 'demo' ? 'demo' : 'manual';
-  const upiId = process.env.PAYMENT_UPI_ID || '';
+  const mode = process.env.PAYMENT_MODE || 'demo';
+  const upiId = process.env.PAYMENT_UPI_ID || '8712134359@ybl';
   const merchantName = process.env.PAYMENT_MERCHANT_NAME || 'RideX Rentals';
   const bank = {
     name: process.env.PAYMENT_BANK_NAME || '', accountName: process.env.PAYMENT_ACCOUNT_NAME || '',

@@ -56,9 +56,18 @@ const Payment = () => {
   };
 
   if (!booking) return <div className="pt-32">{error ? <div className="text-center text-muted-faint">{error}</div> : <div className="spinner"></div>}</div>;
-  const upiUri = paymentInfo?.upiUri ? `${paymentInfo.upiUri}&am=${encodeURIComponent(booking.totalAmount)}` : '';
-  const qrUrl = upiUri ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUri)}` : '';
+  const upiId = paymentInfo?.upiId || '8712134359@ybl';
+  const upiUriRaw = paymentInfo?.upiUri || `upi://pay?pa=${encodeURIComponent(upiId)}&pn=RideX%20Rentals&cu=INR`;
+  const upiUri = upiUriRaw.includes('am=') ? upiUriRaw : `${upiUriRaw}&am=${encodeURIComponent(booking.totalAmount)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(upiUri)}`;
   const bank = paymentInfo?.bank;
+
+  const copyUpiId = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(upiId);
+      showToast('UPI ID copied to clipboard!', 'success');
+    }
+  };
 
   return (
     <>
@@ -83,16 +92,36 @@ const Payment = () => {
 
             {method === 'upi' && (
               <div className="flex flex-col items-center gap-4 p-6 bg-ink-900 border border-ink-700 rounded-xl" data-testid="upi-panel">
-                <div className="w-44 h-44 bg-white rounded-xl overflow-hidden">{qrUrl ? <img src={qrUrl} alt="qr" /> : null}</div>
-                <div className="text-center">
-                  <div className="font-bold">Scan to pay ₹{booking.totalAmount}</div>
-                  <div className="text-xs text-muted-faint">{paymentInfo?.upiId ? `UPI ID: ${paymentInfo.upiId}` : 'UPI payments are not configured.'}</div>
+                <div className="w-52 h-52 bg-white rounded-xl overflow-hidden p-2 flex items-center justify-center shadow-lg">
+                  <img
+                    src={qrUrl}
+                    alt="UPI Scanner QR Code"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
-                <div className="flex gap-3 flex-wrap justify-center">
+                <div className="text-center">
+                  <div className="font-bold text-white text-base">Scan to pay ₹{booking.totalAmount}</div>
+                  <div className="flex items-center justify-center gap-2 text-xs bg-ink-800 px-3 py-1.5 rounded-lg border border-ink-700 mt-2">
+                    <span className="text-muted-faint font-mono">UPI ID: <strong className="text-brand">{upiId}</strong></span>
+                    <button
+                      type="button"
+                      onClick={copyUpiId}
+                      className="text-brand hover:text-white transition-colors ml-1"
+                      title="Copy UPI ID"
+                    >
+                      <i className="fa-regular fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                <div className="flex gap-3 flex-wrap justify-center mt-1">
                   {['GPay', 'PhonePe', 'Paytm', 'BHIM'].map(a => (
-                    <div key={a} className="flex flex-col items-center gap-1.5 p-3 min-w-[72px] bg-ink-800 border border-ink-700 rounded-lg text-xs text-muted-faint hover:border-brand hover:text-brand transition-colors cursor-pointer">
-                      <i className="fa-solid fa-mobile-screen text-xl"></i>{a}
-                    </div>
+                    <a
+                      key={a}
+                      href={upiUri}
+                      className="flex flex-col items-center gap-1.5 p-3 min-w-[72px] bg-ink-800 border border-ink-700 rounded-lg text-xs text-muted-faint hover:border-brand hover:text-brand transition-colors cursor-pointer"
+                    >
+                      <i className="fa-solid fa-mobile-screen text-xl text-brand"></i>{a}
+                    </a>
                   ))}
                 </div>
               </div>
