@@ -18,13 +18,36 @@ const Payment = () => {
   const [method, setMethod] = useState('upi');
   const [loading, setLoading] = useState(false);
   const [card, setCard] = useState({ number: '', name: '', exp: '', cvv: '' });
+  const [paymentInfo, setPaymentInfo] = useState(null);
+  const [error, setError] = useState('');
 
-  useEffect(() => { api.get(`/bookings/${bookingId}`).then(({ data }) => setBooking(data)); }, [bookingId]);
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      setError('');
+      try {
+        const { data } = await api.get(`/bookings/${bookingId}`);
+        if (active) setBooking(data);
+      } catch (err) {
+        if (active) setError(err.response?.data?.message || 'Unable to load this booking.');
+      }
+    };
+    load();
+    return () => { active = false; };
+  }, [bookingId]);
+
+  useEffect(() => {
+    if (!booking) return undefined;
+    let active = true;
+    api.post('/payments/initiate', { bookingId, paymentMethod: method })
+      .then(({ data }) => { if (active) setPaymentInfo(data); })
+      .catch((err) => { if (active) setError(err.response?.data?.message || 'Unable to load payment details.'); });
+    return () => { active = false; };
+  }, [booking, bookingId, method]);
 
   const pay = async () => {
     setLoading(true);
     try {
-      await api.post('/payments/initiate', { bookingId, paymentMethod: method });
       const { data } = await api.post('/payments/verify', { bookingId, paymentMethod: method, transactionId: 'TXN_' + Date.now() });
       showToast(data.message || 'Payment successful!', 'success');
       navigate('/my-bookings');
@@ -32,8 +55,10 @@ const Payment = () => {
     finally { setLoading(false); }
   };
 
-  if (!booking) return <div className="pt-32"><div className="spinner"></div></div>;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=8712134359@ybl&pn=RideX&am=${booking.totalAmount}`;
+  if (!booking) return <div className="pt-32">{error ? <div className="text-center text-muted-faint">{error}</div> : <div className="spinner"></div>}</div>;
+  const upiUri = paymentInfo?.upiUri ? `${paymentInfo.upiUri}&am=${encodeURIComponent(booking.totalAmount)}` : '';
+  const qrUrl = upiUri ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUri)}` : '';
+  const bank = paymentInfo?.bank;
 
   return (
     <>
@@ -53,13 +78,15 @@ const Payment = () => {
                 </button>
               ))}
             </div>
+            {paymentInfo?.mode === 'demo' && method !== 'cash' && <div className="form-hint mb-4">Demo payment only — no real transaction is processed.</div>}
+            {error && <div className="form-error mb-4">{error}</div>}
 
             {method === 'upi' && (
               <div className="flex flex-col items-center gap-4 p-6 bg-ink-900 border border-ink-700 rounded-xl" data-testid="upi-panel">
-                <div className="w-44 h-44 bg-white rounded-xl overflow-hidden"><img src={qrUrl} alt="qr" /></div>
+                <div className="w-44 h-44 bg-white rounded-xl overflow-hidden">{qrUrl ? <img src={qrUrl} alt="qr" /> : null}</div>
                 <div className="text-center">
                   <div className="font-bold">Scan to pay ₹{booking.totalAmount}</div>
-                  <div className="text-xs text-muted-faint">UPI ID: 8712134359@ybl</div>
+                  <div className="text-xs text-muted-faint">{paymentInfo?.upiId ? `UPI ID: ${paymentInfo.upiId}` : 'UPI payments are not configured.'}</div>
                 </div>
                 <div className="flex gap-3 flex-wrap justify-center">
                   {['GPay', 'PhonePe', 'Paytm', 'BHIM'].map(a => (
@@ -85,32 +112,32 @@ const Payment = () => {
             {method === 'netbanking' && (
               <div className="p-6 bg-ink-900 border border-ink-700 rounded-xl" data-testid="nb-panel">
                 <h3 className="font-bold mb-4 text-white">Direct Bank Transfer</h3>
-                <p className="text-sm text-muted-faint mb-6">Please transfer <span className="font-bold text-white">₹{booking.totalAmount}</span> to the following bank account to confirm your booking.</p>
+                <p className="text-sm text-muted-faint mb-6">{paymentInfo?.bankConfigured ? <>Please transfer <span className="font-bold text-white">₹{booking.totalAmount}</span> to the following bank account to confirm your booking.</> : 'Bank transfer details are not configured. Please choose cash on pickup or contact support.'}</p>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between border-b border-ink-800 pb-2">
                     <span className="text-muted-faint">Bank Name</span>
-                    <span className="font-bold text-white">[YOUR BANK NAME]</span>
+                    <span className="font-bold text-white">{bank?.name || 'Not configured'}</span>
                   </div>
                   <div className="flex justify-between border-b border-ink-800 pb-2">
                     <span className="text-muted-faint">Account Name</span>
-                    <span className="font-bold text-white">[YOUR ACCOUNT NAME]</span>
+                    <span className="font-bold text-white">{bank?.accountName || 'Not configured'}</span>
                   </div>
                   <div className="flex justify-between border-b border-ink-800 pb-2">
                     <span className="text-muted-faint">Account Number</span>
-                    <span className="font-bold text-brand">[YOUR ACCOUNT NUMBER]</span>
+                    <span className="font-bold text-brand">{bank?.accountNumber || 'Not configured'}</span>
                   </div>
                   <div className="flex justify-between pb-2">
                     <span className="text-muted-faint">IFSC Code</span>
-                    <span className="font-bold text-white">[YOUR IFSC CODE]</span>
+                    <span className="font-bold text-white">{bank?.ifsc || 'Not configured'}</span>
                   </div>
                 </div>
               </div>
             )}
 
-            {method === 'cash' && <div className="form-hint" data-testid="cash-panel">Pay ₹{booking.totalAmount} at pickup. Your booking will still be confirmed instantly.</div>}
+            {method === 'cash' && <div className="form-hint" data-testid="cash-panel">Pay ₹{booking.totalAmount} at pickup. Your booking will be confirmed, but payment remains due at pickup.</div>}
 
             <button className="btn-primary btn-block btn-lg mt-6" onClick={pay} disabled={loading} data-testid="pay-now-btn">
-              {loading ? 'Processing…' : `Pay ₹${booking.totalAmount}`}
+              {loading ? 'Processing…' : method === 'cash' ? 'Confirm cash on pickup' : paymentInfo?.mode === 'demo' ? `Confirm demo payment · ₹${booking.totalAmount}` : `Pay ₹${booking.totalAmount}`}
             </button>
           </div>
 

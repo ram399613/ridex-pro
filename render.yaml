@@ -13,3 +13,11 @@ services:
         generateValue: true
       - key: MONGO_URI
         sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PAYMENT_MODE
+        value: demo
+      - key: PAYMENT_MERCHANT_NAME
+        value: RideX Rentals
+      - key: PAYMENT_UPI_ID
+        sync: false

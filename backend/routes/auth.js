@@ -2,18 +2,19 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { protect } = require('../middleware/auth');
+const { protect, getJwtSecret } = require('../middleware/auth');
 
-const generateToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET || 'ridex_super_secret_jwt_key_2024', { expiresIn: '7d' });
+const generateToken = (id) => jwt.sign({ id }, getJwtSecret(), { expiresIn: '7d' });
 
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
+    if (!getJwtSecret()) return res.status(500).json({ message: 'Authentication is not configured' });
     if (!name || !email || !password) return res.status(400).json({ message: 'Please fill all fields' });
-    const userExists = await User.findOne({ email });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) return res.status(400).json({ message: 'User already exists with this email' });
-    const user = await User.create({ name, email, password, phone: phone || '' });
+    const user = await User.create({ name: String(name).trim(), email: normalizedEmail, password, phone: phone || '' });
     res.status(201).json({
       _id: user._id, name: user.name, email: user.email,
       phone: user.phone, role: user.role, token: generateToken(user._id),
@@ -25,8 +26,10 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
+    if (!getJwtSecret()) return res.status(500).json({ message: 'Authentication is not configured' });
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
+    const user = await User.findOne({ email: String(email).trim().toLowerCase() }).select('+password');
     if (!user || !(await user.matchPassword(password)))
       return res.status(401).json({ message: 'Invalid email or password' });
     res.json({

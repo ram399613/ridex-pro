@@ -1,21 +1,37 @@
 const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
+const User = require('./models/User');
 
 let io = null;
 
-function initSocket(server) {
-  const corsOrigin = process.env.CORS_ORIGIN;
+function initSocket(server, cors) {
   io = new Server(server, {
-    cors: { origin: corsOrigin || '*', credentials: true },
+    cors,
     path: '/api/socket.io/',
+  });
+
+  io.use(async (socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(); // Public vehicle updates intentionally support guests.
+    try {
+      if (!process.env.JWT_SECRET) return next(new Error('Authentication is not configured'));
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id).select('_id role');
+      if (!user) return next(new Error('Invalid token'));
+      socket.user = user;
+      return next();
+    } catch (_) {
+      return next(new Error('Invalid token'));
+    }
   });
 
   io.on('connection', (socket) => {
     socket.join('public');
 
-    socket.on('auth:join', ({ userId, role } = {}) => {
-      if (userId) socket.join(`user:${userId}`);
-      if (role === 'admin') socket.join('admin');
-    });
+    if (socket.user) {
+      socket.join(`user:${socket.user._id}`);
+      if (socket.user.role === 'admin') socket.join('admin');
+    }
 
     socket.on('disconnect', () => {
 

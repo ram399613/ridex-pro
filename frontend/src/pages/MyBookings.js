@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const { showToast } = useToast();
 
   const load = useCallback(async () => {
@@ -13,6 +14,9 @@ const MyBookings = () => {
     try {
       const { data } = await api.get('/bookings');
       setBookings(data);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to load bookings.');
     } finally { setLoading(false); }
   }, []);
 
@@ -41,7 +45,7 @@ const MyBookings = () => {
         </div>
       </header>
       <section className="py-16 max-w-7xl mx-auto px-6" data-testid="my-bookings-page">
-        {loading ? <div className="spinner"></div> :
+        {loading ? <div className="spinner"></div> : error ? <div className="text-center py-20 text-muted-faint">{error}</div> :
           bookings.length === 0 ? (
             <div className="text-center py-20 text-muted-faint">
               <i className="fa-solid fa-calendar-xmark text-5xl block mb-4"></i>
@@ -78,7 +82,7 @@ const MyBookings = () => {
                       <td className="px-4 py-3.5"><span className={`badge badge-${b.status}`}>{b.status}</span></td>
                       <td className="px-4 py-3.5"><span className={`badge badge-${b.paymentStatus}`}>{b.paymentStatus}</span></td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        {b.paymentStatus === 'pending' && b.status !== 'cancelled' && <Link to={`/payment/${b._id}`} className="btn-primary btn-sm" data-testid={`pay-btn-${b._id}`}>Pay</Link>}
+                        {b.paymentStatus === 'pending' && b.status !== 'cancelled' && b.status !== 'completed' && b.paymentMethod !== 'cash' && <Link to={`/payment/${b._id}`} className="btn-primary btn-sm" data-testid={`pay-btn-${b._id}`}>Pay</Link>}
                         {['pending', 'confirmed'].includes(b.status) && <button className="btn-ghost btn-sm ml-1.5" onClick={() => cancel(b._id)} data-testid={`cancel-btn-${b._id}`}>Cancel</button>}
                       </td>
                     </tr>

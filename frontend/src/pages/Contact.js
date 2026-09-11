@@ -5,7 +5,7 @@ import { useToast } from '../context/ToastContext';
 
 const InfoCard = ({ icon, color, title, sub }) => (
   <div className="bg-ink-800 border border-ink-700 rounded-xl p-5 flex items-center gap-4">
-    <div className={`w-13 h-13 rounded-lg flex items-center justify-center text-2xl ${color}`}><i className={`fa-solid ${icon}`}></i></div>
+    <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${color}`}><i className={`fa-solid ${icon}`}></i></div>
     <div>
       <div className="font-bold">{title}</div>
       <div className="text-xs text-muted-faint">{sub}</div>

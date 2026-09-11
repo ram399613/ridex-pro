@@ -20,7 +20,10 @@ const Home = () => {
       setFeatured(data.slice(0, 6));
       const c = {}; data.forEach(v => { c[v.type] = (c[v.type] || 0) + 1; });
       setCounts(c);
-    }).catch(() => {});
+    }).catch(() => {
+      setFeatured([]);
+      setCounts({});
+    });
     const onVehicleUpdated = (e) => setFeatured(prev => prev.map(x => x._id === e.detail._id ? e.detail : x));
     window.addEventListener('ridex:vehicle-updated', onVehicleUpdated);
     return () => window.removeEventListener('ridex:vehicle-updated', onVehicleUpdated);

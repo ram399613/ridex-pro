@@ -6,6 +6,9 @@ const Booking = require('../models/Booking');
 const { protect } = require('../middleware/auth');
 const { adminOnly } = require('../middleware/admin');
 const { emitVehicleUpdated, emitAdminBookingUpdated, emitUserNotification } = require('../socket');
+const { isActiveBookingStatus, reserveVehicle, releaseVehicle } = require('../utils/bookingState');
+
+const BOOKING_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled'];
 
 router.use(protect, adminOnly);
 
@@ -83,20 +86,32 @@ router.put('/bookings/:id', async (req, res) => {
   try {
     const previous = await Booking.findById(req.params.id);
     if (!previous) return res.status(404).json({ message: 'Booking not found' });
-    const statusChanged = req.body.status && req.body.status !== previous.status;
+    const requestedStatus = req.body.status || previous.status;
+    if (!BOOKING_STATUSES.includes(requestedStatus)) return res.status(400).json({ message: 'Invalid booking status' });
+    const statusChanged = requestedStatus !== previous.status;
+    let vehicle = null;
 
-    const booking = await Booking.findByIdAndUpdate(req.params.id, req.body, { new: true })
-      .populate('vehicle', 'name brand type pricePerDay images')
-      .populate('user', 'name email phone');
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (statusChanged && !isActiveBookingStatus(previous.status) && isActiveBookingStatus(requestedStatus)) {
+      vehicle = await reserveVehicle(previous.vehicle);
+      if (!vehicle) return res.status(409).json({ message: 'Vehicle is not available for this booking status change' });
+    }
 
-    if (statusChanged && ['cancelled', 'completed'].includes(booking.status)) {
-      const vehicle = await Vehicle.findById(booking.vehicle._id);
-      if (vehicle && !vehicle.available) {
-        vehicle.available = true;
-        await vehicle.save();
-        emitVehicleUpdated(vehicle);
-      }
+    let booking;
+    try {
+      booking = await Booking.findByIdAndUpdate(req.params.id, { $set: { status: requestedStatus } }, { new: true, runValidators: true })
+        .populate('vehicle', 'name brand type pricePerDay images')
+        .populate('user', 'name email phone');
+      if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    } catch (error) {
+      if (vehicle) await releaseVehicle(previous.vehicle);
+      throw error;
+    }
+
+    if (statusChanged && isActiveBookingStatus(previous.status) && !isActiveBookingStatus(booking.status)) {
+      vehicle = await releaseVehicle(previous.vehicle);
+    }
+    if (vehicle) {
+      emitVehicleUpdated(vehicle);
     }
 
     emitAdminBookingUpdated(booking);

@@ -18,10 +18,30 @@ const server = http.createServer(app);
   try { await migrateImages(); } catch (e) { console.error('Image migration failed:', e.message); }
 })();
 
-initSocket(server);
+const configuredOrigins = [process.env.CORS_ORIGIN, process.env.RENDER_EXTERNAL_URL].filter(Boolean).join(',')
+  .split(',').map((origin) => origin.trim().replace(/\/$/, '')).filter(Boolean);
+const localOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+const allowedOrigins = process.env.NODE_ENV === 'production' ? configuredOrigins : [...new Set([...configuredOrigins, ...localOrigins])];
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  const cleaned = origin.replace(/\/$/, '');
+  return allowedOrigins.includes('*') || allowedOrigins.includes(cleaned);
+};
+const corsOptions = {
+  origin(origin, callback) {
+    if (isAllowedOrigin(origin)) return callback(null, origin || true);
+    return callback(new Error('Origin not allowed by CORS'));
+  },
+  credentials: true,
+};
 
-const corsOrigin = process.env.CORS_ORIGIN;
-app.use(cors({ origin: corsOrigin ? [corsOrigin] : '*', credentials: true }));
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET must be set in production');
+}
+
+initSocket(server, corsOptions);
+
+app.use(cors(corsOptions));
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

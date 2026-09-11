@@ -14,6 +14,7 @@ const Vehicles = () => {
   const [search, setSearch] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [onlyAvail, setOnlyAvail] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -27,7 +28,9 @@ const Vehicles = () => {
         if (onlyAvail) q.set('available', 'true');
         const { data } = await api.get(`/vehicles?${q.toString()}`);
         setVehicles(data);
-      } finally { setLoading(false); }
+        setError('');
+      } catch (err) { setError(err.response?.data?.message || 'Unable to load vehicles.'); }
+      finally { setLoading(false); }
     };
     load();
   }, [type, sort, search, maxPrice, onlyAvail]);
@@ -113,6 +116,8 @@ const Vehicles = () => {
           <div>
             {loading ? (
               <div className="py-20"><div className="spinner"></div></div>
+            ) : error ? (
+              <div className="text-center py-20 text-muted-faint">{error}</div>
             ) : vehicles.length === 0 ? (
               <div className="text-center py-20 text-muted-faint"><i className="fa-solid fa-magnifying-glass text-5xl text-ink-600 block mb-4"></i>No vehicles match your filters.</div>
             ) : (

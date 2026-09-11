@@ -1,9 +1,11 @@
 import axios from 'axios';
 
-const raw = process.env.REACT_APP_BACKEND_URL || '';
+const raw = (process.env.REACT_APP_BACKEND_URL || '').trim().replace(/\/$/, '');
 const BASE = raw && !/^https?:\/\//i.test(raw) ? `https://${raw}` : raw;
-export const API_BASE = `${BASE}/api`;
-export const SOCKET_URL = BASE;
+// An empty value deliberately uses the current origin: this is correct for the
+// Render service, while the development .env points to localhost.
+export const API_BASE = BASE ? `${BASE}/api` : '/api';
+export const SOCKET_URL = BASE || undefined;
 
 const api = axios.create({ baseURL: API_BASE });
 

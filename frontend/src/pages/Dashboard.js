@@ -6,7 +6,7 @@ import { useToast } from '../context/ToastContext';
 
 const StatCard = ({ icon, color, value, label, testid }) => (
   <div className="bg-ink-800 border border-ink-700 rounded-xl p-5 flex items-center gap-4 transition-all hover:border-brand">
-    <div className={`w-13 h-13 rounded-lg flex items-center justify-center text-2xl ${color}`}><i className={`fa-solid ${icon}`}></i></div>
+    <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${color}`}><i className={`fa-solid ${icon}`}></i></div>
     <div>
       <div className="text-2xl font-extrabold leading-none mb-1" data-testid={testid}>{value}</div>
       <div className="text-xs text-muted-faint">{label}</div>
@@ -21,12 +21,16 @@ const Dashboard = () => {
   const [tab, setTab] = useState('overview');
   const [form, setForm] = useState({ name: user?.name || '', phone: user?.phone || '', address: user?.address || '' });
 
-  useEffect(() => { api.get('/bookings').then(({ data }) => setBookings(data)); }, []);
   useEffect(() => {
-    const onNotif = () => api.get('/bookings').then(({ data }) => setBookings(data));
+    api.get('/bookings').then(({ data }) => setBookings(data))
+      .catch((err) => showToast(err.response?.data?.message || 'Unable to load bookings', 'error'));
+  }, [showToast]);
+  useEffect(() => {
+    const onNotif = () => api.get('/bookings').then(({ data }) => setBookings(data))
+      .catch((err) => showToast(err.response?.data?.message || 'Unable to refresh bookings', 'error'));
     window.addEventListener('ridex:notification', onNotif);
     return () => window.removeEventListener('ridex:notification', onNotif);
-  }, []);
+  }, [showToast]);
 
   const stats = useMemo(() => ({
     total: bookings.length,

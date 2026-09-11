@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
     else localStorage.removeItem('ridex_user');
     if (token) localStorage.setItem('ridex_token', token);
     setUser(u);
+    window.dispatchEvent(new CustomEvent('ridex:auth-change'));
   };
 
   const login = async (email, password) => {
@@ -35,6 +36,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('ridex_token');
     localStorage.removeItem('ridex_user');
     setUser(null);
+    window.dispatchEvent(new CustomEvent('ridex:auth-change'));
   };
 
   const refreshMe = useCallback(async () => {

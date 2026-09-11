@@ -10,7 +10,7 @@ const emptyVehicle = {
 
 const StatCard = ({ icon, color, value, label, testid }) => (
   <div className="bg-ink-800 border border-ink-700 rounded-xl p-5 flex items-center gap-4 hover:border-brand transition-colors">
-    <div className={`w-13 h-13 rounded-lg flex items-center justify-center text-2xl ${color}`}><i className={`fa-solid ${icon}`}></i></div>
+    <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${color}`}><i className={`fa-solid ${icon}`}></i></div>
     <div>
       <div className="text-2xl font-extrabold leading-none mb-1" data-testid={testid}>{value}</div>
       <div className="text-xs text-muted-faint">{label}</div>
@@ -35,8 +35,8 @@ const Admin = () => {
         api.get('/admin/vehicles'), api.get('/admin/users'), api.get('/contact'),
       ]);
       setStats(s.data); setBookings(b.data); setVehicles(v.data); setUsers(u.data); setContactMsgs(c.data);
-    } catch (err) { console.error(err); }
-  }, []);
+    } catch (err) { showToast(err.response?.data?.message || 'Unable to load admin data', 'error'); }
+  }, [showToast]);
 
   useEffect(() => {
     load();

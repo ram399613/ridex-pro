@@ -21,8 +21,14 @@ const Booking = () => {
     notes: '',
   });
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
-  useEffect(() => { api.get(`/vehicles/${vehicleId}`).then(({ data }) => setV(data)); }, [vehicleId]);
+  useEffect(() => {
+    let active = true;
+    api.get(`/vehicles/${vehicleId}`).then(({ data }) => { if (active) setV(data); })
+      .catch((err) => { if (active) setLoadError(err.response?.data?.message || 'Unable to load this vehicle.'); });
+    return () => { active = false; };
+  }, [vehicleId]);
 
   const upd = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -46,7 +52,7 @@ const Booking = () => {
     finally { setLoading(false); }
   };
 
-  if (!v) return <div className="pt-32"><div className="spinner"></div></div>;
+  if (!v) return <div className="pt-32">{loadError ? <div className="text-center text-muted-faint">{loadError}</div> : <div className="spinner"></div>}</div>;
 
   return (
     <>

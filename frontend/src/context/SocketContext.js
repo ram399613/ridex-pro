@@ -1,28 +1,24 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { SOCKET_URL } from '../services/api';
-import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 
 const SocketContext = createContext(null);
 export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider = ({ children }) => {
-  const { user } = useAuth();
   const { showToast } = useToast();
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-
-    const s = SOCKET_URL
-      ? io(SOCKET_URL, { transports: ['polling', 'websocket'], path: '/api/socket.io/', reconnection: true })
-      : io({ transports: ['polling', 'websocket'], path: '/api/socket.io/', reconnection: true });
+    const token = localStorage.getItem('ridex_token');
+    const options = { transports: ['polling', 'websocket'], path: '/api/socket.io/', reconnection: true, auth: token ? { token } : {} };
+    const s = SOCKET_URL ? io(SOCKET_URL, options) : io(options);
     setSocket(s);
 
     s.on('connect', () => {
       setConnected(true);
-      s.emit('auth:join', { userId: user?._id, role: user?.role });
     });
     s.on('disconnect', () => setConnected(false));
     s.on('connect_error', () => setConnected(false));
@@ -39,13 +35,21 @@ export const SocketProvider = ({ children }) => {
     s.on('admin:booking:updated', (b) => window.dispatchEvent(new CustomEvent('ridex:admin-booking', { detail: b })));
     s.on('admin:contact:new', (m) => window.dispatchEvent(new CustomEvent('ridex:admin-contact', { detail: m })));
 
-    return () => { s.disconnect(); };
+    const handleAuthChange = () => {
+      const newToken = localStorage.getItem('ridex_token');
+      s.auth = newToken ? { token: newToken } : {};
+      if (s.connected) s.disconnect().connect();
+    };
 
-  }, []);
+    window.addEventListener('storage', handleAuthChange);
+    window.addEventListener('ridex:auth-change', handleAuthChange);
 
-  useEffect(() => {
-    if (socket && connected) socket.emit('auth:join', { userId: user?._id, role: user?.role });
-  }, [user, socket, connected]);
+    return () => {
+      window.removeEventListener('storage', handleAuthChange);
+      window.removeEventListener('ridex:auth-change', handleAuthChange);
+      s.disconnect();
+    };
+  }, [showToast]);
 
   return (
     <SocketContext.Provider value={{ socket, connected }}>
